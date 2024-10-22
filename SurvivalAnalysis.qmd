@@ -1,0 +1,92 @@
+---
+title: "SurvivalAnalysis"
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+```{r}
+# Install necessary packages
+install.packages("epiR")
+install.packages("epiDisplay")
+install.packages("survival")
+install.packages("cmprsk")
+install.packages("tidyverse")
+
+# Load the packages
+library(epiR)
+library(epiDisplay)
+library(survival)
+library(cmprsk)
+library(tidyverse)
+
+getwd()
+read_lines("toxo.txt")
+toxo <- read.table(file="toxo.txt", header = TRUE, sep="\t", na.string="NA", dec=".")
+
+head(toxo)
+tail(toxo)
+str(toxo)
+dim(toxo)
+
+#Age
+epi.descriptives(toxo$AGE[toxo$PYRPLA==0])$a
+epi.descriptives(toxo$AGE[toxo$PYRPLA==1])$a
+var.test(toxo$AGE~toxo$PYRPLA)
+t.test(toxo$AGE~toxo$PYRPLA, var.equal=T)
+
+toxo %>%
+  group_by(PYRPLA) %>%
+  summarise(
+    mean_age = mean(AGE, na.rm = TRUE),
+    sd_age = sd(STADE, na.rm = TRUE),
+    mean_time = mean(SEXE, na.rm = TRUE),
+  )
+
+# Display proportions for each group
+tabpct(INDDECES ~ PYRPLA, data = data)
+
+# Summarize by treatment group
+summary_table <- aggregate(. ~ PYRPLA, data = toxo, FUN = summary)
+print(summary_table)
+
+
+```
+
+```{r}
+# Load necessary library
+library(survival)
+
+# Create a survival object, using DELSTATUS (time) and STATUS (event)
+surv_object <- Surv(time = toxo$DELSTATUS, event = toxo$STATUS)
+
+# Fit the Kaplan-Meier estimator for each group (PYRPLA is the treatment group)
+km_fit <- survfit(surv_object ~ PYRPLA, data = toxo)
+
+# Plot the Kaplan-Meier curves
+plot(km_fit, col = c("blue", "red"), lty = 1:2, xlab = "Days", ylab = "Survival Probability", 
+     main = "Kaplan-Meier Survival Curves")
+legend("bottomleft", legend = c("Group 0", "Group 1"), col = c("blue", "red"), lty = 1:2)
+
+```
+
+```{r}
+# Median survival time for each group
+summary(km_fit)$table
+# Estimated survival probability at 1 year (365 days)
+summary(km_fit, times = 365)
+
+```
+
+```{r}
+# Load cmprsk package
+library(cmprsk)
+
+# Cumulative incidence for first episode of toxo (INDTOXO is toxo indicator, DELTOXO is time)
+cuminc_fit <- cuminc(ftime = toxo$DELTOXO, fstatus = toxo$INDTOXO, group = toxo$PYRPLA)
+
+# Plot cumulative incidence curves
+plot(cuminc_fit, col = c("blue", "red"))
+
+```
