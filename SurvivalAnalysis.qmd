@@ -123,9 +123,6 @@ legend("bottomleft", legend = c("Placebo", "Pyrimethamine"), col = c("blue", "re
 print(fit1)
 ```
 
-```{}
-```
-
 4\) Estimate the probability of experiencing a 1st episode of toxo in each treatment group: 
 
 a\. Which estimator should be used? Give its formula 
@@ -150,15 +147,74 @@ legend("topleft", legend = c("Placebo --> toxo", "Pyrimethamine --> toxo", "Plac
 timepoints(fit2, time=c(365, 730, 999))
 ```
 
+5\) Estimate the crude association between the treatment group and the hazard of toxo 
+
+a\. Write the equation of the model
+
+b\. Estimate the model, and interpret the results 
+
+c\. Check the proportional hazards (PH) assumption.
+
 ```{r}
+
+str(toxo)
+toxo$PYRPLA <- as.factor(toxo$PYRPLA)
 fit3 <- coxph(Surv(time = toxo$DELTOXO, event = toxo$INDTOXO) ~ PYRPLA, data = toxo)
 
 summary(fit3)
-library(epiDisplay)
 
 cox.display(fit3)
+
+prop3 <- cox.zph(fit3)
+print(prop3)
+plot(prop3)
 ```
 
 ```{r}
+tab1(toxo$STADE)
+fit4 <- coxph(Surv(DELTOXO, INDTOXO) ~ PYRPLA + factor(STADE)+ PYRPLA:factor(STADE), data = toxo)
+summary(fit4)
+```
 
+```{r}
+fit4a <- coxph(Surv(DELTOXO, INDTOXO) ~ PYRPLA + factor(STADE), data = toxo)
+dev4a <- -2 * fit4a$loglik[2] 
+fit4b <- coxph(Surv(DELTOXO, INDTOXO) ~ PYRPLA + factor(STADE)+ PYRPLA:factor(STADE), data = toxo)
+dev4b <- -2 * fit4b$loglik[2] 
+
+dev4a
+dev4b
+```
+
+```{r}
+toxo$STADE3 <- relevel(as.factor(toxo$STADE), ref="3")
+fit4c <- coxph(Surv(DELTOXO, INDTOXO) ~ PYRPLA + factor(STADE3) + PYRPLA:factor(STADE3), data = toxo)
+summary(fit4c)
+anova(fit4b, fit4c)
+```
+
+```{r}
+toxo$STADE4 <- relevel(as.factor(toxo$STADE), ref="4")
+fit4d <- coxph(Surv(DELTOXO, INDTOXO) ~ PYRPLA + factor(STADE4) + PYRPLA:factor(STADE4), data = toxo)
+summary(fit4d)
+anova(fit4b, fit4d)
+```
+
+```{r}
+toxo$STADE5 <- relevel(as.factor(toxo$STADE), ref="5")
+fit4e <- coxph(Surv(DELTOXO, INDTOXO) ~ PYRPLA + factor(STADE5) + PYRPLA:factor(STADE5), data = toxo)
+summary(fit4e)
+anova(fit4b, fit4e)
+```
+
+7\) Estimate the association between the treatment group and the hazard of toxo, adjusted for age, sex, HIV stage, CD4 and hemoglobin levels at inclusion. 
+
+```{r}
+toxo$AGE10 <- toxo$AGE / 10
+toxo$CD4100 <- toxo$CD4 / 100
+toxo$STADE <- as.factor(toxo$STADE)
+
+fit5 <- coxph(Surv(DELTOXO, INDTOXO) ~ PYRPLA + AGE10 + SEXE + STADE + CD4100 + HEMOG, data = toxo)
+summary(fit5)
+cox.display(fit5)
 ```
