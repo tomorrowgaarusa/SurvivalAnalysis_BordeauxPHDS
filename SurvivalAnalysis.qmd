@@ -36,6 +36,31 @@ epi.descriptives(toxo$AGE[toxo$PYRPLA==1])$a
 var.test(toxo$AGE~toxo$PYRPLA)
 t.test(toxo$AGE~toxo$PYRPLA, var.equal=T)
 
+#CD4
+toxo$CD4 <- as.numeric(toxo$CD4)
+epi.descriptives(toxo$CD4[toxo$PYRPLA==0])$a
+epi.descriptives(toxo$CD4[toxo$PYRPLA==1])$a
+var.test(toxo$CD4~toxo$PYRPLA)
+t.test(toxo$CD4~toxo$PYRPLA, var.equal=F)
+
+#HEMOG
+epi.descriptives(toxo$HEMOG[toxo$PYRPLA==0])$a
+epi.descriptives(toxo$HEMOG[toxo$PYRPLA==1])$a
+var.test(toxo$HEMOG~toxo$PYRPLA)
+t.test(toxo$HEMOG~toxo$PYRPLA, var.equal=T)
+
+#SEXE
+tabpct(toxo$SEXE, toxo$PYRPLA, percent = "col")
+chisq.test(toxo$SEXE, toxo$PYRPLA)$expected
+chisq.test(toxo$SEXE, toxo$PYRPLA, correct = F)
+fisher.test(toxo$SEXE, toxo$PYRPLA)
+
+#HIV status
+tabpct(toxo$STADE, toxo$PYRPLA, percent = "col")
+chisq.test(toxo$STADE, toxo$PYRPLA)$expected
+chisq.test(toxo$STADE, toxo$PYRPLA, correct = F)
+fisher.test(toxo$STADE, toxo$PYRPLA)
+
 toxo %>%
   group_by(PYRPLA) %>%
   summarise(
@@ -51,6 +76,29 @@ tabpct(INDDECES ~ PYRPLA, data = data)
 summary_table <- aggregate(. ~ PYRPLA, data = toxo, FUN = summary)
 print(summary_table)
 
+
+```
+
+```{r}
+install.packages("tableone")
+library(tableone)
+
+dput(names(toxo))
+str(toxo)
+var_character <- c("NUMINC")
+var_numeric <- c("AGE", "CD4", "HEMOG", "DELTOXO", "DELDECES", "INDDECES","DELSTATUS")
+var_factor <- c("SEXE", "STADE", "PYRPLA", "INDTOXO", "INDDECES", "STATUS")
+
+toxo[, var_character] <- lapply(toxo[, var_character], as.character)
+toxo[, var_numeric] <- lapply(toxo[, var_numeric], as.numeric)
+toxo[, var_factor] <- lapply(toxo[, var_factor], as.factor)
+
+vars <- c("AGE", "STADE", "SEXE", "CD4", "HEMOG", 
+"INDTOXO", "DELTOXO", "INDDECES", "DELDECES", "STATUS", "DELSTATUS")
+factorvars <-  c("SEXE", "STADE", "INDTOXO", "INDDECES", "STATUS")
+tbl_1 <- CreateTableOne(vars=vars, strata= "PYRPLA", factorvars, includeNA=T, addOverall=F, data=toxo)
+tbl_1 %>% print(showAllLevels = F, includeNA = T)
+tbl_1 %>% print(showAllLevels = F, includeNA = T, nonnormal = vars) %>% write.csv(file="tableone.csv")
 
 ```
 
