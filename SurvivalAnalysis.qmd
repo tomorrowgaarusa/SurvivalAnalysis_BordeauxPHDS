@@ -268,5 +268,115 @@ abline(h=0, col=2)
 abline(h=fit5$coef[7], col=3, lty=2)
 
 
+```
 
+```{r}
+# 7.E.2.
+fit7 <- coxph(Surv(DELTOXO, INDTOXO) ~ factor(PYRPLA) + AGE10 + factor(SEXE) + factor(STADE) + CD4100 + tt(CD4100) + HEMOG, data = toxo, tt = function(x,t,...) x*t)
+summary(fit7)
+```
+
+```{r}
+# 7.E.3 Presenting estimated effect of CD4 at different time points
+fit7$coef["CD4100"]
+fit7$coef["tt(CD4100)"]
+
+beta1year <- fit7$coef["CD4100"] + 365.25*fit7$coef["tt(CD4100)"]
+beta1year
+
+HR1year <- exp(beta1year)
+HR1year
+
+beta2year <- fit7$coef["CD4100"] + (2*365.25) * fit7$coef["tt(CD4100)"]
+beta2year
+
+HR2year <- exp(beta2year)
+HR2year
+
+```
+
+```{r}
+# 7.E.2.
+fit7b <- coxph(Surv(DELTOXO, INDTOXO) ~ factor(PYRPLA) + AGE10 + factor(SEXE) + factor(STADE) + CD4100 + tt(CD4100) + HEMOG, data = toxo, tt = function(x,t,...) x*log(t))
+summary(fit7b)
+
+beta2yearL <- fit7b$coef["CD4100"] + (2*365.25) * fit7b$coef["tt(CD4100)"]
+beta2yearL
+
+HR2yearL <- exp(beta2yearL)
+HR2yearL
+```
+
+```{r}
+# 7.F.
+str(toxo)
+toxob <- survSplit(Surv(DELTOXO, INDTOXO)~., data = toxo, cut=200, episode="TCD4")
+help(survSplit)
+dim(toxo)
+dim(toxob)
+
+head(toxo)
+tail(toxob)
+
+```
+
+```{r}
+fit8 <- coxph(Surv(DELTOXO, INDTOXO) ~ factor(PYRPLA) + AGE10 + factor(SEXE) + factor(STADE) + CD4100:strata(TCD4) + HEMOG, data = toxob)
+summary(fit8)
+cox.display(fit8)
+```
+
+During first 200 days after randomization, the hazard of experiencing toxoplasmosis decreases by 57% for every 100-unit increase in CD4 count After adjusting for treatment , age, sex, HIV stage. This effect is not statistically significant.
+
+At any time After first 200 days after randomization, -
+
+```{r}
+# 7.G
+toxo$cd4c <- cut(toxo$CD4, quantile(toxo$CD4), include.lowest = T, labels = F)
+
+toxo$cd4c <- as.factor(toxo$cd4c)
+fit9 <- coxph(Surv(DELTOXO, INDTOXO) ~ factor(PYRPLA) + AGE10 + factor(SEXE) + factor(STADE) + HEMOG + strata(cd4c), data = toxo)
+
+summary(fit9)
+cox.display(fit9)
+```
+
+8\) Estimate the association between toxo (as a time-dependent variable) and the hazard of death, adjusted for treatment, age, HIV stage, CD4, and hemoglobin levels at inclusion. 
+
+a\. Write the equation of the model 
+
+b\. Estimate the model, and interpret all results 
+
+c\. Check the linear assumption for each quantitative variable, using a penalized spline function 
+
+d\. Check the PH assumption for each variable, using Schoenfeld residuals
+
+```{r}
+# 8.b
+tab1(toxo$INDTOXO)
+epi.descriptives(as.numeric(toxo$DELTOXO))$a
+
+toxo$deltox <- as.numeric(ifelse(toxo$INDTOXO ==1, toxo$DELTOXO, NA))
+epi.descriptives(as.numeric(toxo$deltox))$a
+# identification of toxo delay equal to death delay
+subset(toxo, deltox==DELDECES)
+
+# transformation of the toxo delay for these subjects to avoid ties on these two delays: they are given a toxo delay 0.5 days shorter thant teh death delay: deltoxo-0.5
+toxo$deltox <- ifelse(toxo$deltox==toxo$DELDECES, toxo$deltox-0.5, toxo$deltox)
+toxo[c(15,111),]
+subset(toxo, deltox==DELDECES)
+
+# toxoを発症していないレコードはそのまま、発症した人は、toxoの前の期間とその後の期間を分けたデータフレームを作成する
+temp <- with(toxo,
+             data.frame(
+               NUMINC=NUMINC,
+               deldec=DELDECES,
+               deltox=deltox,
+               inddec=INDDECES
+             ))
+head(temp)
+
+toxo1 <- tmerge(toxo, temp, id=NUMINC, death=event(deldec, inddec),
+                indtox=tdc(deltox))
+toxo1
 ```
