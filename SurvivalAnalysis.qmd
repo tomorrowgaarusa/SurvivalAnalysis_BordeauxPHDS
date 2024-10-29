@@ -245,7 +245,6 @@ DO NOT care about linear part.
 7.d. Check the PH assumption for each variable, using Schoenfeld residuals 
 
 ```{r}
-
 termplot(fit6, terms=2, sep=T)
 hist(toxo$AGE10)
 
@@ -379,4 +378,17 @@ head(temp)
 toxo1 <- tmerge(toxo, temp, id=NUMINC, death=event(deldec, inddec),
                 indtox=tdc(deltox))
 toxo1
+head(toxo1)
+# toxoを発症した人は2行あり、tstopの前後でindtoxが切り替わっている
+```
+
+```{r}
+fit10 <- coxph(Surv(tstart, tstop, death) ~ PYRPLA + AGE10 + factor(SEXE) + factor(STADE) + CD4 + HEMOG + indtox, data = toxo1)
+summary(fit10)
+```
+
+```{r}
+
+prop10 <- cox.zph(fit10)
+print(prop10)
 ```
