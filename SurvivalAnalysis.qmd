@@ -21,6 +21,7 @@ library(survival)
 library(cmprsk)
 library(tidyverse)
 
+
 getwd()
 read_lines("toxo.txt")
 toxo <- read.table(file="toxo.txt", header = TRUE, sep="\t", na.string="NA", dec=".")
@@ -217,4 +218,16 @@ toxo$STADE <- as.factor(toxo$STADE)
 fit5 <- coxph(Surv(DELTOXO, INDTOXO) ~ PYRPLA + AGE10 + SEXE + STADE + CD4100 + HEMOG, data = toxo)
 summary(fit5)
 cox.display(fit5)
+```
+
+At any time after randomization, after adjustment for treatment, sex, CD4 count and HEMOG at baseline, the hazard of experiencint toxoplasm decreases by 31% for every 100 increase in CD4 count at baseline . And the result is statistically significant.
+
+Check the linear assumption for each quantitative variable, using a penalized spline function 
+
+```{r}
+# toxo$AGE10 <- toxo$AGE / 10
+# toxo$CD4100 <- toxo$CD4 / 100
+# toxo$STADE <- as.factor(toxo$STADE)
+fit6 <- coxph(Surv(DELTOXO, INDTOXO) ~ factor(PYRPLA) + pspline(AGE10, df=4) + factor(SEXE) + factor(STADE) + pspline(CD4100, df=4) + pspline(HEMOG, df=4), data = toxo)
+summary(fit6)
 ```
