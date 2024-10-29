@@ -392,3 +392,20 @@ summary(fit10)
 prop10 <- cox.zph(fit10)
 print(prop10)
 ```
+
+```{r}
+
+fit10b <- coxph(Surv(tstart, tstop, death) ~ PYRPLA + pspline(AGE10) + factor(SEXE) + factor(STADE) + pspline(CD4) + pspline(HEMOG) + indtox, data = toxo1)
+summary(fit10b)
+```
+
+```{r}
+fit10c <- coxph(Surv(tstart, tstop, death) ~ PYRPLA + AGE10 + factor(SEXE) + factor(STADE) + pspline(CD4) + HEMOG + indtox, data = toxo1)
+summary(fit10c)
+cox.display(fit10c)
+```
+
+```{r}
+prop10c <- cox.zph(fit10c)
+print(prop10c)
+```
